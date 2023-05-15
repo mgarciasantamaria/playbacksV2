@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #_*_ codig: utf8 _*_
-json_path='../../json/vars.json'
+json_path='../json/vars.json'
 log_Path="./logs" # Ruta del folder donde se alojan los archivos logs
 data_base_connect_prod="host=10.10.130.38 dbname=cdndb user=vodtransfers3 password=vod-2022" #Datos para establecer conexion con la base de datos de produccion.
 aws_profile='pythonapps' #Nombre del perfil de aconexion a AWS
