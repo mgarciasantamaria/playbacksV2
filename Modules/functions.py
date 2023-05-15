@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #_*_ codig: utf8 _*_
-import datetime, psycopg2, boto3, smtplib
+import datetime, psycopg2, boto3, smtplib, json
 import xml.etree.ElementTree as ET
 from email.message import EmailMessage
 from Modules.constants import *
@@ -177,3 +177,15 @@ xmldata.duration,
 new_manifests.segduration;"""
     return sql
 #***************************************--END--****************************
+
+def Flag_Status(OPTION):
+    with open(json_path, "r") as json_file:
+            json_data=json.load(json_file)
+    if OPTION=="r":
+        return json_data["FLAG"]
+    elif OPTION=="w":
+        json_data["FLAG"]=False
+        with open(json_path, "w") as json_file:
+            json.dump(json_data, json_file)
+    else:
+        pass
