@@ -10,5 +10,8 @@ Buckets={   #Diccionario con keys y values que identifican el canal y el bucket 
     "21": ["aenla-in-toolbox", "History"],
     "31": ["aenla-in-toolbox", "Lifetime"],
     "41": ["aenla-in-toolbox", "History2"],
+    "51": ["spe-in-toolbox", "AXN"],
+    "52": ["spe-in-toolbox", "SONY-MOVIES"],
+    "61": ["spe-in-toolbox", "SONY"],
     "62": ["spe-in-toolbox", "SONY-AXN"],
     }

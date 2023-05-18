@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #_*_ codig: utf8 _*_
-import datetime, psycopg2, boto3, smtplib, json
+import datetime, psycopg2, boto3, smtplib, json, sys, traceback
 import xml.etree.ElementTree as ET
 from email.message import EmailMessage
 from Modules.constants import *
@@ -32,75 +32,82 @@ def SendMail(text, mail_subject): #se define la función llamada 'SendMail' que 
 # extraer información sobre el contenido y almacenarla en la base de datos PostgreSQL. La función devuelve una lista de contentid que 
 # fueron procesados exitosamente.
 def extract_xml_data(contentid_list, DATE_LOG): #Se define la función llamada extract_xml_data que acepta dos argumentos: contentid_list y DATE_LOG.
-    list_OkXmlData = [] #Se crea una lista vacía llamada list_OkXmlData.
-    postgresql=psycopg2.connect(data_base_connect_prod) #Se establece la conexión a la base de datos PostgreSQL utilizando la información proporcionada en la variable data_base_connect. 
-    curpsql=postgresql.cursor() #Se crea un cursor curpsql para ejecutar consultas en la base de datos.
-    aws_session=boto3.Session(profile_name=aws_profile) #Se establece una sesión de AWS utilizando el perfil especificado en la variable aws_profile.
-    s3_resource=aws_session.resource('s3') #Se crea un recurso s3_resource para acceder a los objetos de Amazon S3.
-    for d in contentid_list: #Se itera a través de cada elemento en la lista contentid_list.
-        contentid=d[0] #Se extrae el valor del primer elemento de cada tupla en la lista y se almacena en la variable contentid.
-        bucket = Buckets[contentid[6:8]][0] # Se extrae el primer elemento del dicionario Buckets segun el key que contenga la variable contentid y se almacena en la variable 'bukect'.
-        Folder= Buckets[contentid[6:8]][1] # Se extrae el segundo elemento del dicionario Buckets segun el key que contenga la variable contentid y se almacena en la variable 'Folder'.
-        Object_key = Folder+'/'+contentid+'/'+contentid+'.xml' #se utilizan los valores de bucket y la variable Folder para defiir el nombre del bucket y la ruta del objeto XML en Amazon S3.
-        xml_data=s3_resource.Bucket(bucket).Object(Object_key).get()['Body'].read().decode('utf-8') #Se obtiene el objeto XML desde Amazon S3, Se lee el contenido del objeto y se almacena en la variable xml_data.
-        xml_root = ET.fromstring(xml_data) #Se utiliza la función ET.fromstring del módulo ElementTree para analizar el contenido XML y se almacena en la variable xml_root.
-        contentType = xml_root.find("contentType").text #Se extrae el valor de la etiqueta contentType del XML y se almacena en la variable contentType.
-        data=[ #se crea una lista llamada data que contiene el valor extraido de las etiquetas externalId y channel, como tambien la variable contentType.
-            xml_root.find("externalId").text, # contentid
-            contentType, # contenttype
-            xml_root.find('channel').text #channel
-        ]
-        for title in xml_root.iter('title'): #se itera a través de las etiquetas title en el XML.
-            data.append(title.text) #Se agrega el valor a la lista data.
-            break
-        if contentType=="movie": #Se comprueba el valor de contentType.
-            data.append("na") #Si es igual a "movie", se agrega "na" a la lista data como valor para serietitle.
-        elif contentType=="episode":
-            for serietitle in xml_root.iter("seriesTitle"):# Si es igual a episode se itera a traves de la etiqueta seriesTitle 
-                data.append(serietitle.text) #Se agrega el primer valor a la lista data.
+    try:
+        list_OkXmlData = [] #Se crea una lista vacía llamada list_OkXmlData.
+        postgresql=psycopg2.connect(data_base_connect_prod) #Se establece la conexión a la base de datos PostgreSQL utilizando la información proporcionada en la variable data_base_connect. 
+        curpsql=postgresql.cursor() #Se crea un cursor curpsql para ejecutar consultas en la base de datos.
+        aws_session=boto3.Session(profile_name=aws_profile) #Se establece una sesión de AWS utilizando el perfil especificado en la variable aws_profile.
+        s3_resource=aws_session.resource('s3') #Se crea un recurso s3_resource para acceder a los objetos de Amazon S3.
+        for d in contentid_list: #Se itera a través de cada elemento en la lista contentid_list.
+            contentid=d[0] #Se extrae el valor del primer elemento de cada tupla en la lista y se almacena en la variable contentid.
+            bucket = Buckets[contentid[6:8]][0] # Se extrae el primer elemento del dicionario Buckets segun el key que contenga la variable contentid y se almacena en la variable 'bukect'.
+            Folder= Buckets[contentid[6:8]][1] # Se extrae el segundo elemento del dicionario Buckets segun el key que contenga la variable contentid y se almacena en la variable 'Folder'.
+            Object_key = Folder+'/'+contentid+'/'+contentid+'.xml' #se utilizan los valores de bucket y la variable Folder para defiir el nombre del bucket y la ruta del objeto XML en Amazon S3.
+            xml_data=s3_resource.Bucket(bucket).Object(Object_key).get()['Body'].read().decode('utf-8') #Se obtiene el objeto XML desde Amazon S3, Se lee el contenido del objeto y se almacena en la variable xml_data.
+            xml_root = ET.fromstring(xml_data) #Se utiliza la función ET.fromstring del módulo ElementTree para analizar el contenido XML y se almacena en la variable xml_root.
+            contentType = xml_root.find("contentType").text #Se extrae el valor de la etiqueta contentType del XML y se almacena en la variable contentType.
+            data=[ #se crea una lista llamada data que contiene el valor extraido de las etiquetas externalId y channel, como tambien la variable contentType.
+                xml_root.find("externalId").text, # contentid
+                contentType, # contenttype
+                xml_root.find('channel').text #channel
+            ]
+            for title in xml_root.iter('title'): #se itera a través de las etiquetas title en el XML.
+                data.append(title.text) #Se agrega el valor a la lista data.
                 break
-        data.append(xml_root.find("release").text) #Se agrega el valor de la etiqueta release a la lista data.
-        if contentType=='movie': #Si contendtype es movie se agrga no aplica a la lista data.
-            data.append('na') #season
-            data.append('na') #episode
-        elif contentType=='episode': #Si el contenido es episode se agregan los valores de las etiquetas season y episode a la lista data
-            data.append(xml_root.find("season").text) #season
-            data.append(xml_root.find("episode").text) #episode
-            
-        for genre in xml_root.iter('genre'): #Se itera a traves de la etiqueta genre y se agrega el primer valor a la lista data 
-            data.append(genre.text) #genre
-            break
-        for rating in xml_root.iter('rating'): #Se itera a traves de la etiqueta rating y se agrega el primer valor a la lista data 
-            data.append(rating.text) #rating
-            break
+            if contentType=="movie": #Se comprueba el valor de contentType.
+                data.append("na") #Si es igual a "movie", se agrega "na" a la lista data como valor para serietitle.
+            elif contentType=="episode":
+                for serietitle in xml_root.iter("seriesTitle"):# Si es igual a episode se itera a traves de la etiqueta seriesTitle 
+                    data.append(serietitle.text) #Se agrega el primer valor a la lista data.
+                    break
+            data.append(xml_root.find("release").text) #Se agrega el valor de la etiqueta release a la lista data.
+            if contentType=='movie': #Si contendtype es movie se agrga no aplica a la lista data.
+                data.append('na') #season
+                data.append('na') #episode
+            elif contentType=='episode': #Si el contenido es episode se agregan los valores de las etiquetas season y episode a la lista data
+                data.append(xml_root.find("season").text) #season
+                data.append(xml_root.find("episode").text) #episode
                 
-        dur=xml_root.find("duration").text #Se almacena el valor de la etiqueta duration en la variable dur.
-        duration_split=dur.split(':') #Separamos en forma de lista los digitos numericos del dato dur.
-        duration=Duration_Transform(duration_split) #Se ejecuta la funcion Duration_Transform la cual transforma y entrega el dato en segundos, se almacena el mismo en la variable diration 
-        data.append(duration) #Se agrega el valor de la variable duration a la lista data.
-        
-        print(data) # Se imprime la lista data.
-        SQL="INSERT INTO xmldata VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);" #Sentencia SQL para insertar datos en la tabla xmldata
-        DATA=( #Datos a registrar con la sentencia anterior
-            data[0], #contentid
-            data[1], #contenttype
-            data[2], #channel
-            data[3], #title
-            data[4], #serietitle
-            data[5], #releaseyear
-            data[6], #season
-            data[7], #episode
-            data[8], #genre
-            data[9], #rating
-            data[10] #duration
-        )
-        curpsql.execute(SQL,DATA) #Se ejecuta la sentencia SQL con los datos especificados en la tupla DATA
-        list_OkXmlData.append(contentid) #Se agrega el contentid a las lista list_OkXmlData
-
+            for genre in xml_root.iter('genre'): #Se itera a traves de la etiqueta genre y se agrega el primer valor a la lista data 
+                data.append(genre.text) #genre
+                break
+            for rating in xml_root.iter('rating'): #Se itera a traves de la etiqueta rating y se agrega el primer valor a la lista data 
+                data.append(rating.text) #rating
+                break
+                    
+            dur=xml_root.find("duration").text #Se almacena el valor de la etiqueta duration en la variable dur.
+            duration_split=dur.split(':') #Separamos en forma de lista los digitos numericos del dato dur.
+            duration=Duration_Transform(duration_split) #Se ejecuta la funcion Duration_Transform la cual transforma y entrega el dato en segundos, se almacena el mismo en la variable diration 
+            data.append(duration) #Se agrega el valor de la variable duration a la lista data.
+            
+            print(data) # Se imprime la lista data.
+            SQL="INSERT INTO xmldata VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);" #Sentencia SQL para insertar datos en la tabla xmldata
+            DATA=( #Datos a registrar con la sentencia anterior
+                data[0], #contentid
+                data[1], #contenttype
+                data[2], #channel
+                data[3], #title
+                data[4], #serietitle
+                data[5], #releaseyear
+                data[6], #season
+                data[7], #episode
+                data[8], #genre
+                data[9], #rating
+                data[10] #duration
+            )
+            curpsql.execute(SQL,DATA) #Se ejecuta la sentencia SQL con los datos especificados en la tupla DATA
+            list_OkXmlData.append(contentid) #Se agrega el contentid a las lista list_OkXmlData
+        postgresql.commit() #Se confirman los cambios en la base de datos
+        postgresql.close() #Se cierra la conexion con la base de datos
+        return list_OkXmlData #Retorna la lista de contentid a los cuales se extrajo los datos del xml.
         #print(xml_data)
-    postgresql.commit() #Se confirman los cambios en la base de datos
-    postgresql.close() #Se cierra la conexion con la base de datos
-    return list_OkXmlData #Retorna la lista de contentid a los cuales se extrajo los datos del xml.
+    except:
+        postgresql.close() #Se cierra la conexion con la base de datos
+        error=sys.exc_info()[2] #-------Captura del error que arroja el sistema
+        errorinfo=traceback.format_tb(error)[0] #-Captura el detalle del error
+        print(errorinfo, str(sys.exc_info()[1])) #-Se agrega al diccionario detalle del error generado
+        return [errorinfo, str(sys.exc_info()[1])]
+
 #************************************************************--END--*******************************************
 
 #*************************************--FUNCTION Duration_Transform--***************************************

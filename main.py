@@ -22,7 +22,7 @@ if __name__ == '__main__':
 			curpsql.execute("SELECT DISTINCT SUBSTR(new_manifests.contentid, 3) FROM new_manifests LEFT JOIN xmldata ON SUBSTR(new_manifests.contentid, 3) = xmldata.contentid where  xmldata.contentid is NULL;")# ejecuta una consulta SQL que extrae registros de la tabla new_manifests cuyo contentid no está en la tabla xmldata.
 			contentid_list=curpsql.fetchall() #Se almacena como una lista el dato que arroja la consulta anterior.
 			if contentid_list != []: #Se valida si la lista contentid_list no esta vacia.
-				dict["OkXmlData"]=extract_xml_data(contentid_list, date_log) #Se asigna la lista que retorna la funcion extract_xml_data a la clave OkXmlData del diccionario dict. 
+				dict["XmlData"]=extract_xml_data(contentid_list, date_log) #Se asigna la lista que retorna la funcion extract_xml_data a la clave OkXmlData del diccionario dict. 
 			curpsql.execute(sql_statement(date_run)) #Se ejecuta la consulta SQL principal la cual permite generar los datos a registrar en la tabla playbacks.
 			dict["Playbacks_Registered"]=str(curpsql.rowcount) #Se asigna la cantidad de registros a la clave Playbacks_Registered del diccionario dict.
 			postgresql.commit() #Se confirman los cambios en la base de datos
