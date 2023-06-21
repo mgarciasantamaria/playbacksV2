@@ -30,7 +30,7 @@ if __name__ == '__main__':
 			finish=time.time() #Se almacena el dato de hora y fecha al finalizar las consultas SQL.
 			dict['Process_duration']=str(round((finish-beginning),3)) #Se asigna a la clave Process_duration del diccionario dict el calculo de la duracion del proceso.
 			dict_str_json=json.dumps(dict, sort_keys=False, indent=8) #-Se da formato tipo json-string al diccionario
-			SendMail(str(dict_str_json), "Playbacks execution summary Testing") #-Uso de la funcion SendMail para enviar email con el resumen de la ejecucion
+			SendMail(str(dict_str_json), "Playbacks execution summary PROD") #-Uso de la funcion SendMail para enviar email con el resumen de la ejecucion
 			print_log(dict_str_json, date_log) #Se ejecuta la funcion print_log que escribe en el archivo log el texto de la variable dict_str_json.
 		except:
 			error=sys.exc_info()[2] #-------Captura del error que arroja el sistema
@@ -38,7 +38,7 @@ if __name__ == '__main__':
 			dict["Excute_Error"]=[errorinfo, str(sys.exc_info()[1])] #-Se agrega al diccionario detalle del error generado
 			dict_str_json=json.dumps(dict, sort_keys=False, indent=8) #-Se da formato tipo json al dicionario 
 	#-------Se crea el archivo log con el resumen de la ejecucion y el error
-			SendMail(str(dict_str_json), "Playbacks execution summary Testing") #-Se usa la funcion SendEmail para enviar email con el resumen de la ejecucion y el error
+			SendMail(str(dict_str_json), "Playbacks execution summary PROD") #-Se usa la funcion SendEmail para enviar email con el resumen de la ejecucion y el error
 			print_log(dict_str_json, date_log) ##Se ejecuta la funcion print_log que escribe en el archivo log el texto de la variable dict_str_json.
 	else:
 		SendMail('etltoolbox application failure not recognized\n', 'etlcdnata application failure not recognized')
