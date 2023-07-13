@@ -2,7 +2,7 @@
 #_*_ codig: utf8 _*_
 json_path='../json/vars.json'
 log_Path="./logs" # Ruta del folder donde se alojan los archivos logs
-data_base_connect_prod="host=10.10.130.38 dbname=cdndb user=vodtransfers3 password=vod-2022" #Datos para establecer conexion con la base de datos de produccion.
+data_base_connect_prod="host=10.10.130.152 dbname=toolboxprod user=vodaplications password=V0D-20234pl1c4t10ns" #Datos para establecer conexion con la base de datos de produccion.
 aws_profile='pythonapps' #Nombre del perfil de aconexion a AWS
 Mail_To='IngenieriaVCMC@vcmedios.com.co' #E-mail de destino 
 Buckets={   #Diccionario con keys y values que identifican el canal y el bucket segun contentid.
