@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #_*_ codig: utf8 _*_
 import datetime, psycopg2, boto3, smtplib, json, sys, traceback
+from dateutil.relativedelta import relativedelta
 import xml.etree.ElementTree as ET
 from email.message import EmailMessage
 from Modules.constants import *
@@ -196,3 +197,18 @@ def Flag_Status(OPTION):
             json.dump(json_data, json_file)
     else:
         pass
+
+def segmentsDelete(date_in):
+    try:
+        psql_db=psycopg2.connect(data_base_connect_prod)
+        psql_cursor=psql_db.cursor()
+        date=date_in-relativedelta(days=7)
+        date_sql=str(datetime.datetime.strftime(date, "%Y-%m-%d"))
+        psql_cursor.execute(f"DELETE FROM new_segmentos WHERE datetime LIKE'%{date_sql}%';")
+        text_mail=psql_cursor.statusmessage
+        psql_db.commit()
+        psql_cursor.close()
+        psql_db.close()
+        return text_mail
+    except:
+        return "error segmentsdelete"

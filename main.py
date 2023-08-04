@@ -11,6 +11,7 @@ if __name__ == '__main__':
 	if Flag_Status('r'):	
 		try:
 			date_now=datetime.datetime.now() #Captura del dato de hora y fecha.
+			dict["segmentsdelete"]=segmentsDelete(date_now)
 			date_log=str(datetime.datetime.strftime(date_now, "%Y-%m-%d")) #Transformacion de dato de hora y fecha al formato "AAAA-MM-DD" y a tipo string.
 			date_run=str(datetime.datetime.strftime(date_now - datetime.timedelta(days=1), "%Y-%m-%d")) #Se resta un dia y se Transforma el dato de hora y fecha al formato "%Y-%m-%d" y a tipo string.
 			postgresql=psycopg2.connect(data_base_connect_prod) #Se crea conexion con la base de datos de acuerdo con los datos almacenados en la variable data_base_connect_prod.
