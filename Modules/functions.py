@@ -202,7 +202,7 @@ def segmentsDelete(date_in):
     try:
         psql_db=psycopg2.connect(data_base_connect_prod)
         psql_cursor=psql_db.cursor()
-        date=date_in-relativedelta(days=7)
+        date=date_in-relativedelta(days=3)
         date_sql=str(datetime.datetime.strftime(date, "%Y-%m-%d"))
         psql_cursor.execute(f"DELETE FROM new_segmentos WHERE datetime LIKE'%{date_sql}%';")
         text_mail=psql_cursor.statusmessage
